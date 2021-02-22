@@ -18,13 +18,9 @@ const generatedColors = [["red","yellow","yellow","yellow"],["red","green","blue
 
 
 
-
-
-
-
-
-
-
+const line = document.createElement("div");
+line.classList.add('line');
+document.body.appendChild(line);
 
 
 /*-----------------------------*/
@@ -66,37 +62,85 @@ class Tube {
       this.colors !== destinationTube.colors || destinationTube.isEmpty();
   }
   mixTubes (destinationTube) {
-    this.moveTo(destinationTube);
-    let fill = setInterval(
-      ()=>{
-        console.log("run");
-        this.level--;
+    let amount = 0;
+    const color = this.colors[this.colors.length-1];
+    do {
+      this.level--;
         const color = this.colors.pop();
         destinationTube.colors.push(color);
-        destinationTube.fill(color);
-        let index = this.getState();
-        this.rotate(degs[index]);
-        this.setFluidLevel(states[index]);
+        amount++;
         
-       if (!this.isMixable(destinationTube)){
-         clearInterval(fill);
-         console.log("stop");
-       }
-      },200
-    );
+    }
+    while(this.isMixable(destinationTube))
+    const state = this.getState();
+    this.pour(color,state,amount,destinationTube);
   }
-  fill (color) {
+  pour(color,stateIndex,amount,destinationTube) {
+    const duration = amount*200;
+    setTimeout(()=>{
+      //move tube back
+      setTimeout(()=>{
+        this.setOwnDuration(300);
+        this.setFluidDuration(300);
+        destinationTube.removeLine();
+        this.clearFluidColors(amount);
+        this.moveBack();
+      },duration);
+      //pour tube out
+      //this.el.style.transitionDuration = duration + "ms";
+      //this.setFluidDuration(duration);
+      destinationTube.drawLine(color);
+      this.rotate(degs[stateIndex]);
+      this.setFluidLevel(states[stateIndex]);
+      destinationTube.fill(color,amount)
+      
+      
+    },200);
+    //move tube to destionation
+    //this.setOwnDuration(200);
+    //this.setFluidDuration(200);
+    this.moveTo(destinationTube);
+  }
+  clearFluidColors(amount) {
+    for (let i = 0; i < amount; i++) {
+      this.fluids[i].setColor("");
+    }
+  }
+  moveBack () {
+    this.el.style.top = this.offsetY + "px";
+    this.el.style.left = this.offsetX + "px";
+    this.rotate(0);
+    this.setFluidLevel(states[0]);
+  }
+  fill (color,amount=1) {
     if (this.level < this.limit) {
-      //fill direction: backward
-      let index = this.limit -1 -this.level;
+      for(let i=0; i<amount;i++){
+        let index = this.limit -1 -this.level;
       this.fluids[index].setColor(color);
       this.fluids[index].setHeight(50);
       this.level++;
+      }
     }
   }
+  drawLine (color) {
+    line.style.display = "block";
+    line.style.top = this.offsetY -100 + "px";
+    line.style.left = this.offsetX + 21 +"px";
+    line.style.height = (this.limit- this.level) * 50 + 150 +"px";
+    line.style.backgroundColor = color;
+  }
+  removeLine () {
+    line.style.display = "none";
+  }
   rotate(deg) {
-    this.el.style.transform = `rotateZ(-${deg}deg)`;
+    this.el.style.transform = `rotateZ(${deg*-1}deg)`;
     this.fluidsEl.style.transform = `rotateZ(${deg}deg)`;
+  }
+  setFluidDuration(duration) {
+    this.fluids.forEach(fluid => {fluid.setDuration(duration)});
+  }
+  setOwnDuration(duration) {
+    this.el.style.transitionDuration = duration + "ms";
   }
   setFluidLevel(heightArr) {
     this.fluids.forEach((fluid,i) => {
@@ -135,7 +179,9 @@ class Fluid {
     }
     tube.fluids.unshift(this);
   }
-
+  setDuration(duration){
+    this.el.style.transitionDuration = duration + "ms";
+  }
   setHeight(num) {
     this.el.style.height = num + "px";
     this.height = num;
@@ -152,7 +198,7 @@ let state3 = [0,0,12,110];
 let state4 = [0,0,0,110];
 let state5 = [0,0,0,97];
 let states = [state0,state1,state2,state3,state4,state5];
-let degs = [0,63,76,79,85,90];
+let degs = [0,64,76,79,85,90];
 //create tubes
 for (let i=0;i<numOfTubes;i++) {
   const tubeEl = document.createElement("DIV");
