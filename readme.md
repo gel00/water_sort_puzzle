@@ -9,3 +9,6 @@ Gameplay in Water Sort Puzzle is very easy. As soon as you start playing you'll 
 ## Control
 
 Tap or click any glass to pour water to another glass. Try not to get stuck - but don’t worry, you can always undo your movements at any time or start a new one.
+
+## Live Demo
+https://gel00.github.io/water_sort_puzzle/
