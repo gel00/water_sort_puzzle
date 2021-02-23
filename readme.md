@@ -1,6 +1,5 @@
 # Water Sort Puzzle v0.9.8
-
-This is a basic calculator
+A classic puzzle game.
 
 ## How do you play water sort puzzle?
 
