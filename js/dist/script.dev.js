@@ -1,5 +1,13 @@
 "use strict";
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -11,14 +19,114 @@ var screenHeight = window.innerHeight;
 var screenWidth = window.innerWidth;
 var tubeHeight = 250;
 var tubeWidth = 50;
-var numOfTubes = 4;
+var numOfTubes = 6;
 var marginX = (screenWidth - numOfTubes * tubeWidth) / (numOfTubes + 1);
+
+var makeConfetty = function makeConfetty(duration, x, y) {
+  var end = Date.now() + duration;
+
+  var frame = function frame() {
+    // launch a few confetti from the left edge
+    confetti({
+      particleCount: 12,
+      angle: 90,
+      spread: 55,
+      origin: {
+        x: x / screenWidth,
+        y: y / screenHeight
+      }
+    }); // and launch a few from the right edge
+
+    /*confetti({
+      particleCount: 7,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1 }
+    });*/
+    // keep going until we are out of time
+
+    if (Date.now() < end) {
+      requestAnimationFrame(frame);
+    }
+  };
+
+  frame();
+};
+
 var container = document.getElementById("container");
 var tubes = [];
-var generatedColors = [["red", "yellow", "yellow", "yellow"], ["red", "green", "blue", "yellow"], ["yellow", "blue", "green", "red"], ["", "", "", ""]];
+
+var generateColors = function generateColors(colorArr, level, totalOfTubes) {
+  var numOfTubes = colorArr.length;
+  var arr = [];
+  colorArr.forEach(function (color) {
+    for (var i = 0; i < level; i++) {
+      arr.push(color);
+    }
+  }); //shuffle colors
+
+  arr.sort(function () {
+    return .5 - Math.random();
+  }); //split into tubes
+
+  arrs = new Array(Math.ceil(arr.length / level)).fill().map(function (_) {
+    return arr.splice(0, level);
+  });
+
+  for (var i = 0, empty = totalOfTubes - colorArr.length; i < empty; i++) {
+    var emptyTube = [];
+
+    for (var _i = 0; _i < level; _i++) {
+      emptyTube.push("");
+    }
+
+    arrs.push(emptyTube);
+  }
+
+  return arrs;
+}; //const generatedColors = [["red","yellow","yellow","yellow"],["blue","green","red","yellow"],["yellow","red","green","blue"],["","","",""]];
+
+
+var generatedColors = [];
+var counter = 0;
+
+var checkGameWin = function checkGameWin() {
+  if (counter === 4) {
+    var duration = 3 * 1000;
+    var end = Date.now() + duration;
+    console.log("win");
+
+    (function frame() {
+      // launch a few confetti from the left edge
+      confetti({
+        particleCount: 7,
+        angle: 60,
+        spread: 55,
+        origin: {
+          x: 0
+        }
+      }); // and launch a few from the right edge
+
+      confetti({
+        particleCount: 7,
+        angle: 120,
+        spread: 55,
+        origin: {
+          x: 1
+        }
+      }); // keep going until we are out of time
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    })();
+  }
+};
+
 var line = document.createElement("div");
 line.classList.add('line');
 document.body.appendChild(line);
+var gameState = [];
 /*-----------------------------*/
 
 var Tube =
@@ -40,16 +148,23 @@ function () {
   _createClass(Tube, [{
     key: "lift",
     value: function lift() {
-      if (selectedTube !== this) {
-        if (selectedTube) {
+      if (selectedTube) {
+        if (selectedTube !== this) {
+          if (selectedTube.isMixable(this)) {
+            selectedTube.mixTubes(this);
+            selectedTube = "";
+          } else {
+            selectedTube.drop();
+            selectedTube = this;
+            this.el.style.top = this.offsetY - 100 + "px";
+          }
+        } else {
           selectedTube.drop();
+          selectedTube = "";
         }
-
+      } else {
         selectedTube = this;
         this.el.style.top = this.offsetY - 100 + "px";
-      } else {
-        selectedTube.drop();
-        selectedTube = "";
       }
     }
   }, {
@@ -79,16 +194,27 @@ function () {
       var color = this.colors[this.colors.length - 1];
 
       do {
-        this.level--;
-
         var _color = this.colors.pop();
 
         destinationTube.colors.push(_color);
         amount++;
       } while (this.isMixable(destinationTube));
 
-      var state = this.getState();
+      var state = states.length - 1 - (this.level - amount);
       this.pour(color, state, amount, destinationTube);
+    }
+  }, {
+    key: "checkWinState",
+    value: function checkWinState(destinationTube) {
+      if (destinationTube.colors.every(function (color, i, arr) {
+        return color === arr[0];
+      }) && destinationTube.level == this.limit) {
+        var x = destinationTube.offsetX;
+        var y = destinationTube.offsetY;
+        makeConfetty(100, x, y);
+        counter++;
+        checkGameWin();
+      }
     }
   }, {
     key: "pour",
@@ -108,6 +234,8 @@ function () {
           _this.clearFluidColors(amount);
 
           _this.moveBack();
+
+          _this.checkWinState(destinationTube);
         }, duration); //pour tube out
         //this.el.style.transitionDuration = duration + "ms";
         //this.setFluidDuration(duration);
@@ -129,7 +257,9 @@ function () {
     key: "clearFluidColors",
     value: function clearFluidColors(amount) {
       for (var i = 0; i < amount; i++) {
-        this.fluids[i].setColor("");
+        var index = this.limit - this.level;
+        this.fluids[index].setColor("");
+        this.level--;
       }
     }
   }, {
@@ -270,38 +400,64 @@ var state5 = [0, 0, 0, 97];
 var states = [state0, state1, state2, state3, state4, state5];
 var degs = [0, 64, 76, 79, 85, 90]; //create tubes
 
-var _loop = function _loop(i) {
-  var tubeEl = document.createElement("DIV");
-  tubeEl.classList.add("test_tube");
-  tubeEl.id = "tube".concat(i + 1);
-  tubeEl.style.top = "300px";
-  var x = marginX + i * (tubeWidth + marginX);
-  var tube = new Tube(generatedColors[i], tubeEl, x, 300);
-  tubes.push(tube);
-  tubeEl.style.left = x + "px"; //create fluids wrapper
+var newGame = function newGame() {
+  counter = 0;
+  container.innerHTML = "";
+  generatedColors = generateColors(["red", "green", "blue", "yellow"], 4, 6);
+  gameState = _toConsumableArray(generatedColors);
 
-  var fluidsEl = document.createElement("DIV");
-  fluidsEl.classList.add("fluids");
-  tubeEl.appendChild(fluidsEl); //create fluid
+  var _loop = function _loop(i) {
+    var tubeEl = document.createElement("DIV");
+    tubeEl.classList.add("test_tube");
+    tubeEl.id = "tube".concat(i + 1);
+    tubeEl.style.top = "300px";
+    var x = marginX + i * (tubeWidth + marginX);
+    var tube = new Tube(generatedColors[i], tubeEl, x, 300);
+    tubes.push(tube);
+    tube.tubeIndex = i;
+    tubeEl.style.left = x + "px"; //create fluids wrapper
 
-  generatedColors[i].forEach(function (colors) {
-    var fluidEl = document.createElement("DIV");
-    fluidEl.classList.add("fluid");
-    var fluid = new Fluid(tube, colors, fluidEl);
-    fluidsEl.prepend(fluidEl);
-  }); //set tube's properties (level,fluidsEl)
+    var fluidsEl = document.createElement("DIV");
+    fluidsEl.classList.add("fluids");
+    tubeEl.appendChild(fluidsEl); //create fluid
 
-  tube.fluidsEl = fluidsEl;
-  tube.level = generatedColors[i].filter(function (color) {
-    return color;
-  }).length; //append + eventListener
+    generatedColors[i].forEach(function (colors) {
+      var fluidEl = document.createElement("DIV");
+      fluidEl.classList.add("fluid");
+      var fluid = new Fluid(tube, colors, fluidEl);
+      fluidsEl.prepend(fluidEl);
+    }); //set tube's properties (level,fluidsEl)
 
-  container.appendChild(tubeEl);
-  tubeEl.addEventListener("click", function (event) {
-    tube.lift();
-  });
+    tube.fluidsEl = fluidsEl;
+    tube.level = generatedColors[i].filter(function (color) {
+      return color;
+    }).length; //append + eventListener
+
+    container.appendChild(tubeEl);
+    tubeEl.addEventListener("click", function (event) {
+      tube.lift();
+    });
+  };
+
+  for (var i = 0; i < numOfTubes; i++) {
+    _loop(i);
+  }
 };
 
-for (var i = 0; i < numOfTubes; i++) {
-  _loop(i);
-}
+newGame();
+var myCanvas = document.createElement('canvas');
+var confettiEL = document.getElementById("confetti");
+confettiEL.appendChild(myCanvas);
+var myConfetti = confetti.create(myCanvas, {
+  resize: true
+});
+myConfetti({
+  particleCount: 100,
+  startVelocity: 30,
+  spread: 360,
+  origin: {
+    x: 125,
+    // since they fall down, start a bit higher than random
+    y: 300
+  }
+});
