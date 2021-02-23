@@ -227,10 +227,8 @@ function () {
       setTimeout(function () {
         //move tube back
         setTimeout(function () {
-          _this.setOwnDuration(300);
-
-          _this.setFluidDuration(300);
-
+          //this.setOwnDuration(300);
+          //this.setFluidDuration(300);
           destinationTube.removeLine();
 
           _this.clearFluidColors(amount);
@@ -244,9 +242,8 @@ function () {
 
         destinationTube.drawLine(color);
 
-        _this.rotate(degs[stateIndex]);
+        _this.rotate(degs[stateIndex]); //this.setFluidLevel(states[stateIndex]);
 
-        _this.setFluidLevel(states[stateIndex]);
 
         destinationTube.fill(color, amount);
       }, 200); //move tube to destionation
@@ -280,8 +277,8 @@ function () {
       if (this.level < this.limit) {
         for (var i = 0; i < amount; i++) {
           var index = this.limit - 1 - this.level;
-          this.fluids[index].setColor(color);
           this.fluids[index].setHeight(50);
+          this.fluids[index].setColor(color);
           this.level++;
         }
       }

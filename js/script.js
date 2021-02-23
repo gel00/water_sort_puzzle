@@ -188,8 +188,8 @@ class Tube {
     setTimeout(() => {
       //move tube back
       setTimeout(() => {
-        this.setOwnDuration(300);
-        this.setFluidDuration(300);
+        //this.setOwnDuration(300);
+        //this.setFluidDuration(300);
         destinationTube.removeLine();
         this.clearFluidColors(amount);
         this.moveBack();
@@ -200,7 +200,7 @@ class Tube {
       //this.setFluidDuration(duration);
       destinationTube.drawLine(color);
       this.rotate(degs[stateIndex]);
-      this.setFluidLevel(states[stateIndex]);
+      //this.setFluidLevel(states[stateIndex]);
       destinationTube.fill(color, amount)
 
     }, 200);
@@ -227,8 +227,8 @@ class Tube {
     if (this.level < this.limit) {
       for (let i = 0; i < amount; i++) {
         let index = this.limit - 1 - this.level;
-        this.fluids[index].setColor(color);
         this.fluids[index].setHeight(50);
+        this.fluids[index].setColor(color);
         this.level++;
       }
     }
