@@ -1,5 +1,5 @@
 let level = 1;
-
+let saves = [];
 const screenHeight = window.innerHeight;
 const screenWidth = window.innerWidth;
 const tubeHeight = 250;
@@ -170,7 +170,7 @@ class Tube {
     while (this.isMixable(destinationTube))
     const state = states.length - 1 - (this.level - amount);
     this.pour(color, state, amount, destinationTube);
-    
+    saveGame();
   }
 
   checkWinState(destinationTube) {
@@ -314,11 +314,19 @@ let states = [state0, state1, state2, state3, state4, state5];
 let degs = [0, 64, 76, 79, 85, 90];
 //create tubes
 
-const newGame = () => {
+const newGame=()=>{
+  saves = [];
   counter = 0;
-  container.innerHTML = "";
   generatedColors = generateColors(["red", "green", "blue", "yellow"], 4, 6);
   gameState = [...generatedColors];
+  createGame();
+};
+
+const createGame = () => {
+  
+  container.innerHTML = "";
+  
+  
   for (let i = 0; i < numOfTubes; i++) {
     const tubeEl = document.createElement("DIV");
     tubeEl.classList.add("test_tube");
@@ -356,6 +364,30 @@ const newGame = () => {
 
 newGame();
 
+const saveGame = ()=>{
+  const btn = document.getElementById("undo");
+  btn.classList.remove("disabled");
+  const save = [];
+  tubes.forEach(tube=>{
+    const colors = [];
+    tube.fluids.forEach(fluid =>{colors.push(fluid.color)});
+    save.push(colors.reverse());
+  })
+  saves.push(save);
+};
+
+loadGame = ()=>{
+  const btn = document.getElementById("undo");
+  if(saves.length >0) {
+    const lastState = saves.pop();
+    generatedColors = lastState;
+    createGame();
+    btn.classList.remove("disabled");
+    if(saves.length ===0 ) {
+      btn.classList.add("disabled");
+    }
+  }
+}
 
 var myCanvas = document.createElement('canvas');
 var confettiEL = document.getElementById("confetti");

@@ -15,6 +15,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 var level = 1;
+var saves = [];
 var screenHeight = window.innerHeight;
 var screenWidth = window.innerWidth;
 var tubeHeight = 250;
@@ -202,6 +203,7 @@ function () {
 
       var state = states.length - 1 - (this.level - amount);
       this.pour(color, state, amount, destinationTube);
+      saveGame();
     }
   }, {
     key: "checkWinState",
@@ -401,10 +403,15 @@ var states = [state0, state1, state2, state3, state4, state5];
 var degs = [0, 64, 76, 79, 85, 90]; //create tubes
 
 var newGame = function newGame() {
+  saves = [];
   counter = 0;
-  container.innerHTML = "";
   generatedColors = generateColors(["red", "green", "blue", "yellow"], 4, 6);
   gameState = _toConsumableArray(generatedColors);
+  createGame();
+};
+
+var createGame = function createGame() {
+  container.innerHTML = "";
 
   var _loop = function _loop(i) {
     var tubeEl = document.createElement("DIV");
@@ -445,6 +452,36 @@ var newGame = function newGame() {
 };
 
 newGame();
+
+var saveGame = function saveGame() {
+  var btn = document.getElementById("undo");
+  btn.classList.remove("disabled");
+  var save = [];
+  tubes.forEach(function (tube) {
+    var colors = [];
+    tube.fluids.forEach(function (fluid) {
+      colors.push(fluid.color);
+    });
+    save.push(colors.reverse());
+  });
+  saves.push(save);
+};
+
+loadGame = function loadGame() {
+  var btn = document.getElementById("undo");
+
+  if (saves.length > 0) {
+    var lastState = saves.pop();
+    generatedColors = lastState;
+    createGame();
+    btn.classList.remove("disabled");
+
+    if (saves.length === 0) {
+      btn.classList.add("disabled");
+    }
+  }
+};
+
 var myCanvas = document.createElement('canvas');
 var confettiEL = document.getElementById("confetti");
 confettiEL.appendChild(myCanvas);
